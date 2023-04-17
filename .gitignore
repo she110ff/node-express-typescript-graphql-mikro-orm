@@ -1,0 +1,22 @@
+node_modules
+.env
+.env.*
+.env.prod
+mikro-orm.config-*.ts
+.idea/
+coverage
+coverage.json
+typechain
+lib
+
+#Hardhat files
+cache
+artifacts
+
+.vscode
+.DS_Store
+
+data/
+dist/
+
+temp_image/

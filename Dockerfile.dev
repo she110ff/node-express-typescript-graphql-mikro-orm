@@ -1,0 +1,10 @@
+FROM node:16-alpine
+
+WORKDIR /usr
+COPY package.json yarn.lock ./
+COPY tsconfig.json ./
+COPY src ./src
+RUN ls -a
+RUN yarn install
+EXPOSE 4001
+CMD ["npm","run","dev"]
