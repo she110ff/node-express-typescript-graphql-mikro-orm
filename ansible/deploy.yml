@@ -1,0 +1,27 @@
+---
+# deploy.yml
+- name: Run the docker container
+  hosts: boa_space_backend
+  tasks:
+    - name: Run the BOA SPACE Server
+      community.general.docker_container:
+        name: boa-space-backend
+        pull: true
+        recreate: yes
+        env:
+          NODE_DEV: "{{ NODE_DEV }}"
+          RPC_URL: "{{ RPC_URL }}"
+          JWT_SECRET: "{{ JWT_SECRET }}"
+          AWS_ACCESS_KEY_ID: "{{ AWS_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "{{ AWS_SECRET_ACCESS_KEY }}"
+          S3_BUCKET_NAME: "{{ BUCKET_NAME }}"
+          S3_REGION: "ap-southeast-1"
+          POSTGRES_HOST: "{{ POSTGRES_HOST }}"
+          POSTGRES_DB: "postgres"
+          POSTGRES_USER: "postgres"
+          POSTGRES_PASSWORD: "{{ POSTGRES_PASSWORD }}"
+          SHAREDASSET_CONTRACT: "{{ SHAREDASSET_CONTRACT }}"
+        ports:
+          - "4001:4001"
+        image: bosagora/boa-space-backend:{{ TAG }}
+        state: started
