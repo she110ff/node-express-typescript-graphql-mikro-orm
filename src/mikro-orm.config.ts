@@ -29,6 +29,7 @@ const config: Options = {
   password: process.env.POSTGRES_PASSWORD,
   dbName: process.env.POSTGRES_DB,
   host: process.env.POSTGRES_HOST,
+  port: 5433,
   debug: !process.env.PRODUCTION,
   highlighter: !process.env.PRODUCTION ? new SqlHighlighter() : undefined,
   pool: {
