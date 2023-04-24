@@ -1,7 +1,7 @@
 import { AuthChecker } from 'type-graphql';
-import { BOAContext } from '../interfaces/context.interface';
+import {UserContext} from '../interfaces/context.interface';
 
-export const customAuthChecker: AuthChecker<BOAContext> = ({
+export const customAuthChecker: AuthChecker<UserContext> = ({
   args,
   context,
   info,

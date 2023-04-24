@@ -6,7 +6,14 @@ import ws from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { buildSchema } from 'type-graphql';
 import { ApolloServer } from 'apollo-server-express';
-import { Connection, IDatabaseDriver, MikroORM } from '@mikro-orm/core';
+import {
+  Connection,
+  EntityManager,
+  EntityRepository,
+  IDatabaseDriver,
+  MikroORM,
+  RequestContext,
+} from '@mikro-orm/core';
 
 import { graphqlUploadExpress } from 'graphql-upload-ts';
 
@@ -15,9 +22,17 @@ import { UserResolver } from './resolvers/user.resolver';
 import { customAuthChecker } from './ utils/AuthChecker';
 import { verify } from 'jsonwebtoken';
 import User from './entities/user.entity';
-import { IPayload, IUser } from './interfaces/context.interface';
+import { ITokenPayload, IUser } from './interfaces/context.interface';
+import {verifyAccessToken} from './ utils/Auth';
+import * as process from 'process';
 
 dotenv.config();
+
+export const DI = {} as {
+  orm: MikroORM;
+  em: EntityManager;
+  userRepository: EntityRepository<User>;
+};
 
 export default class Application {
   public orm!: MikroORM<IDatabaseDriver<Connection>>;
@@ -25,10 +40,13 @@ export default class Application {
   public httpServer!: Server;
   public apolloServer!: ApolloServer;
   public subscriptionServer!: ws.Server;
-
   public connect = async (): Promise<void> => {
     try {
       this.orm = await MikroORM.init(config);
+      DI.orm = this.orm;
+      DI.em = DI.orm.em;
+      DI.userRepository = DI.em.getRepository(User);
+
       const migrator = this.orm.getMigrator();
       const migrations = await migrator.getPendingMigrations();
       if (migrations && migrations.length > 0) {
@@ -55,7 +73,6 @@ export default class Application {
 
     this.expressApp.get('/', (_req, res) => res.send('Hello, World!'));
 
-    // generate the graphql schema
     const schema = await buildSchema({
       resolvers: [
         UserResolver,
@@ -64,32 +81,19 @@ export default class Application {
       authChecker: customAuthChecker,
     });
 
-    // initialize the ws server to handle subscriptions
     this.subscriptionServer = new ws.Server({
       server: this.httpServer,
       path: '/graphql',
     });
 
-    // initalize the apollo server, passing in the schema and then
-    // defining the context each query/mutation will have access to
     this.apolloServer = new ApolloServer({
       schema,
       context: ({ req, res }) => {
-        const authorization = req.headers.authorization;
-        let payload: IPayload | null = null;
-        if (authorization) {
-          try {
-            const token = authorization.split(' ')[1];
-            payload = verify(token, process.env.JWT_SECRET);
-          } catch (e) {
-            console.log('auth verification error:', e);
-          }
-        }
+        const payload = verifyAccessToken(req, process.env.JWT_SECRET!)
         const user: IUser | null = payload
           ? {
-              id: payload.id,
-              name: payload.name,
-              userAddress: payload.userAddress,
+              userId: payload.userId,
+              email: payload.email,
             }
           : null;
 
@@ -105,8 +109,6 @@ export default class Application {
         return error;
       },
       plugins: [
-        // we need to use a callback here since the subscriptionServer is scoped
-        // to the class and would not exist otherwise in the plugin definition
         (subscriptionServer = this.subscriptionServer) => {
           return {
             async serverWillStart() {
@@ -121,9 +123,7 @@ export default class Application {
       ],
     });
 
-    // you need to start the server BEFORE applying middleware
     await this.apolloServer.start();
-    // pass the express app and the cors config to the middleware
     this.apolloServer.applyMiddleware({
       app: this.expressApp,
       cors: corsOptions,
@@ -131,7 +131,6 @@ export default class Application {
 
     const port = process.env.PORT || 4001;
     this.httpServer.listen(port, () => {
-      // pass in the schema and then the subscription server
       useServer(
         {
           schema,
