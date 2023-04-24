@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
 
-export interface IPayload {
-  id: string;
-  name: string;
-  userAddress: string;
+export interface ITokenPayload {
+  userId: string;
+  email: string;
   iat: number;
   exp: number;
   iss: string;
@@ -11,12 +10,12 @@ export interface IPayload {
 }
 
 export interface IUser {
-  id: string;
+  userId: string;
+  email?: string;
   name?: string;
-  userAddress: string;
 }
 
-export interface BOAContext {
+export interface UserContext {
   req: Request;
   res: Response;
   user?: IUser;

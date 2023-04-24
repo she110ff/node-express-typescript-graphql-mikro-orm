@@ -1,5 +1,10 @@
 # boa-space-backend
 
+## chat prompt
+1. node, express, typegraphql, mikro orm, jsonwebtoken 을 사용하는 앱, login, sign up, refresh token 기능 포함, UserResolver에 기능 구현하는 코드
+2. 코드 파일 목록
+3. userResolver.ts 의 함수 목록 : 코드가 짤릴때, 함수 하나씩 보기 위해서.+
+
 ## Set Environment file
 
 ```
