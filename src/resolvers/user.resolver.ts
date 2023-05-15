@@ -63,21 +63,25 @@ export class UserResolver {
       @Ctx() ctx: ReqContext,
   ): Promise<boolean> {
     const { em, res } = ctx;
+    const user = await em.findOne(User, { email });
+    if (user) {
+      throw new Error('The user is already registered.');
+    }
     const hashedPassword = await argon2.hash(password);
-    const user = new User(
+    const newUser = new User(
       email,
       hashedPassword,
     );
 
     try {
-      await em.persistAndFlush(user);
+      await em.persistAndFlush(newUser);
     } catch (err) {
       console.log(err);
       return false;
     }
 
-    await sendVerificationEmail(user);
-    sendRefreshToken(res, createRefreshToken(user));
+    await sendVerificationEmail(newUser);
+    sendRefreshToken(res, createRefreshToken(newUser));
 
     return true;
   }
